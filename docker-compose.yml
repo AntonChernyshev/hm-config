@@ -18,5 +18,35 @@ services:
       io.balena.features.kernel-modules: '1'
       io.balena.features.supervisor-api: '1'
     stop_signal: SIGINT
+
+  mqtt-broker:
+    image: eclipse-mosquitto:2
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/log:/mosquitto/log
+    networks:
+      - helium-sim-net
+
+  provisioning-service:
+    build: ./provisioning_service
+    restart: unless-stopped
+    depends_on:
+      - mqtt-broker
+    environment:
+      - MQTT_BROKER_HOST=mqtt-broker
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - helium-sim-net
+
 volumes:
   miner-storage:
+
+networks:
+  helium-sim-net:
+    driver: bridge
